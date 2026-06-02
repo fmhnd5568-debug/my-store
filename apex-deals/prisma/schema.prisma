@@ -1,0 +1,114 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String     @id @default(cuid())
+  email     String     @unique
+  phone     String?
+  name      String?
+  password  String?
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  
+  // العلاقات
+  wishlist  Product[]  @relation("UserWishlist")
+  orders    Order[]
+  affiliate Affiliate?
+  messages  Message[]
+}
+
+model Product {
+  id        String     @id @default(cuid())
+  name      String
+  description String?
+  image     String?
+  categoryId Int
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  
+  // العلاقات
+  prices    Price[]
+  reviews   Review[]
+  wishlists User[]     @relation("UserWishlist")
+}
+
+model Price {
+  id        String     @id @default(cuid())
+  productId String
+  store     String     // AliExpress, Amazon, eBay
+  price     Float
+  link      String
+  createdAt DateTime   @default(now())
+  
+  // العلاقات
+  product   Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  @@index([productId])
+}
+
+model Review {
+  id        String     @id @default(cuid())
+  productId String
+  rating    Int        // 1-5
+  comment   String?
+  createdAt DateTime   @default(now())
+  
+  // العلاقات
+  product   Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  @@index([productId])
+}
+
+model Order {
+  id        String     @id @default(cuid())
+  userId    String
+  total     Float
+  status    String     // pending, completed, cancelled
+  createdAt DateTime   @default(now())
+  
+  // العلاقات
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+}
+
+model Affiliate {
+  id        String     @id @default(cuid())
+  userId    String     @unique
+  earnings  Float      @default(0)
+  clicks    Int        @default(0)
+  conversions Int      @default(0)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  
+  // العلاقات
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+}
+
+model Message {
+  id        String     @id @default(cuid())
+  userId    String?
+  name      String
+  email     String
+  phone     String?
+  subject   String
+  content   String
+  status    String     @default("new") // new, read, replied
+  createdAt DateTime   @default(now())
+  
+  // العلاقات
+  user      User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
+  
+  @@index([userId])
+}
